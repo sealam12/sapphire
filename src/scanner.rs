@@ -250,7 +250,7 @@ impl<'a> Scanner<'a> {
 
         let string_literal: String = self.source.chars()
             .skip(self.start+1)
-            .take((self.current - self.start) - 1)
+            .take((self.current - self.start) - 2)
             .collect();
         self.add_token(TokenType::String, Value::Str(string_literal));
     }
