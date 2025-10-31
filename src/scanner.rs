@@ -231,7 +231,7 @@ impl<'a> Scanner<'a> {
             .take(self.current - self.start)
             .collect();
         
-        let int_literal: i32 = string_literal.parse::<i32>().expect("Failed to parse string to i32");
+        let int_literal: usize = string_literal.parse::<usize>().expect("Failed to parse string to i32");
 
         self.add_token(TokenType::Number, Value::Int(int_literal));
     }
