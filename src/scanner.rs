@@ -72,7 +72,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn add_token_short(&mut self, token_type: TokenType) {
-        self.add_token(token_type, Value::None)
+        self.add_token(token_type, Value::Null)
     }
 
     fn add_token(&mut self, token_type: TokenType, literal: Value) {
@@ -231,9 +231,9 @@ impl<'a> Scanner<'a> {
             .take(self.current - self.start)
             .collect();
         
-        let int_literal: usize = string_literal.parse::<usize>().expect("Failed to parse string to i32");
+        let int_literal: f64 = string_literal.parse::<f64>().expect("Failed to parse string to i32");
 
-        self.add_token(TokenType::Number, Value::Int(int_literal));
+        self.add_token(TokenType::Number, Value::Number(int_literal));
     }
 
     fn string(&mut self) {
@@ -261,7 +261,7 @@ impl<'a> Scanner<'a> {
             self.scan_token();
         }
         
-        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: String::from(""), literal: Value::None, line: self.line});
+        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: String::from(""), literal: Value::Null, line: self.line});
         self.tokens.clone()
     }
 }

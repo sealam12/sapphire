@@ -2,10 +2,14 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
+use crate::expr::Expr;
+
 mod scanner;
 mod token;
 mod token_type;
 mod value;
+mod expr; 
+mod astprinter;
 
 struct Sapphire {
     pub had_error: bool,
@@ -69,7 +73,21 @@ fn main() -> std::io::Result<()> {
     let mut sapphire: Sapphire = Sapphire { had_error: false };
 
     let args: Vec<String> = env::args().collect();
-    let args_len = args.len();
+    let args_len: usize = args.len();
+
+    let my_expr: Expr = expr::Expr::Binary {
+        left: Box::new(Expr::Unary {
+            operator: token::Token {token_type: token_type::TokenType::Minus, lexeme: String::from("-"), literal: value::Value::Null, line: 1 as usize}, 
+            right: Box::new(expr::Expr::Literal { value: value::Value::Number(123 as f64) }) }),
+        operator: token::Token { token_type: token_type::TokenType::Star, lexeme: String::from("*"), literal: value::Value::Null, line: 1 as usize}, 
+        right: Box::new(expr::Expr::Grouping { expression: Box::new(expr::Expr::Literal { value: value::Value::Number(45.67 as f64) }) })
+    };
+
+    let mut my_astprinter: astprinter::AstPrinter = astprinter::AstPrinter {};
+
+    println!("{}", my_astprinter.print(&my_expr));
+
+    /*
 
     if args_len > 2 {
         println!("Usage: sapphire [file]");
@@ -78,6 +96,8 @@ fn main() -> std::io::Result<()> {
     } else {
         sapphire.run_prompt();
     }
+
+    */
 
     Ok(())
 }
