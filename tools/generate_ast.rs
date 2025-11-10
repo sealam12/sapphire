@@ -122,7 +122,7 @@ fn main() {
     }
 
     let output_dir: String = args[1].clone();
-    define_ast(output_dir, String::from("Expr"), vec![
+    define_ast(output_dir, String::from("Expr".to_string(), vec![
         String::from("Binary     :Box<Expr>;left,Token;operator,Box<Expr>;right"),
         String::from("Grouping   :Box<Expr>;expression"),
         String::from("Literal    :Value;value"),

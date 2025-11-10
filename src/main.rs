@@ -3,6 +3,8 @@ use std::io::{self, Write};
 use std::fs;
 
 use crate::expr::Expr;
+use crate::token::Token;
+use crate::token_type::TokenType;
 
 mod scanner;
 mod token;
@@ -10,6 +12,8 @@ mod token_type;
 mod value;
 mod expr; 
 mod astprinter;
+mod parser;
+mod error;
 
 struct Sapphire {
     pub had_error: bool,
@@ -30,7 +34,14 @@ impl Sapphire {
     }
     
     pub fn error(&mut self, line: usize, message: String) {
-        self.report(line, String::from(""), message);
+        self.report(line, "".to_string(), message);
+    }
+
+    pub fn token_error(&mut self, token: Token, message: String) {
+        match token.token_type {
+            TokenType::EOF => self.report(token.line, " at end".to_string(), message),
+            _ => self.report(token.line, " at '".to_string() + token.lexeme.as_str() + "'", message)
+        }
     }
     
     pub fn report(&mut self, line: usize, where_at: String, message: String) {
@@ -75,20 +86,6 @@ fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let args_len: usize = args.len();
 
-    let my_expr: Expr = expr::Expr::Binary {
-        left: Box::new(Expr::Unary {
-            operator: token::Token {token_type: token_type::TokenType::Minus, lexeme: String::from("-"), literal: value::Value::Null, line: 1 as usize}, 
-            right: Box::new(expr::Expr::Literal { value: value::Value::Number(123 as f64) }) }),
-        operator: token::Token { token_type: token_type::TokenType::Star, lexeme: String::from("*"), literal: value::Value::Null, line: 1 as usize}, 
-        right: Box::new(expr::Expr::Grouping { expression: Box::new(expr::Expr::Literal { value: value::Value::Number(45.67 as f64) }) })
-    };
-
-    let mut my_astprinter: astprinter::AstPrinter = astprinter::AstPrinter {};
-
-    println!("{}", my_astprinter.print(&my_expr));
-
-    /*
-
     if args_len > 2 {
         println!("Usage: sapphire [file]");
     } else if args_len == 2 {
@@ -96,8 +93,6 @@ fn main() -> std::io::Result<()> {
     } else {
         sapphire.run_prompt();
     }
-
-    */
 
     Ok(())
 }

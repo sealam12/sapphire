@@ -17,22 +17,22 @@ pub struct Scanner<'a> {
 
 pub fn get_keywords() -> HashMap<String, TokenType> {
     HashMap::from([
-        (String::from("and"), TokenType::And),
-        (String::from("class"), TokenType::Class),
-        (String::from("else"), TokenType::Else),
-        (String::from("false"), TokenType::False),
-        (String::from("fn"), TokenType::Fun),
-        (String::from("for"), TokenType::For),
-        (String::from("if"), TokenType::If),
-        (String::from("nil"), TokenType::Nil),
-        (String::from("or"), TokenType::Or),
-        (String::from("println"), TokenType::PrintLn),
-        (String::from("return"), TokenType::Return),
-        (String::from("super"), TokenType::Super),
-        (String::from("this"), TokenType::This),
-        (String::from("true"), TokenType::True),
-        (String::from("var"), TokenType::Var),
-        (String::from("while"), TokenType::While),  
+        ("and".to_string(), TokenType::And),
+        ("class".to_string(), TokenType::Class),
+        ("else".to_string(), TokenType::Else),
+        ("false".to_string(), TokenType::False),
+        ("fn".to_string(), TokenType::Fun),
+        ("for".to_string(), TokenType::For),
+        ("if".to_string(), TokenType::If),
+        ("nil".to_string(), TokenType::Nil),
+        ("or".to_string(), TokenType::Or),
+        ("println".to_string(), TokenType::PrintLn),
+        ("return".to_string(), TokenType::Return),
+        ("super".to_string(), TokenType::Super),
+        ("this".to_string(), TokenType::This),
+        ("true".to_string(), TokenType::True),
+        ("var".to_string(), TokenType::Var),
+        ("while".to_string(), TokenType::While),  
     ])
 }
 
@@ -261,7 +261,7 @@ impl<'a> Scanner<'a> {
             self.scan_token();
         }
         
-        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: String::from(""), literal: Value::Null, line: self.line});
+        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: "".to_string(), literal: Value::Null, line: self.line});
         self.tokens.clone()
     }
 }
