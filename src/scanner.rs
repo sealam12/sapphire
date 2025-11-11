@@ -1,6 +1,7 @@
 use crate::value::Value;
 use crate::token::Token;
 use crate::token_type::TokenType;
+use crate::error::ScanError;
 use super::Sapphire;
 
 use std::collections::HashMap;
@@ -21,7 +22,7 @@ pub fn get_keywords() -> HashMap<String, TokenType> {
         ("class".to_string(), TokenType::Class),
         ("else".to_string(), TokenType::Else),
         ("false".to_string(), TokenType::False),
-        ("fn".to_string(), TokenType::Fun),
+        ("fn".to_string(), TokenType::Fn),
         ("for".to_string(), TokenType::For),
         ("if".to_string(), TokenType::If),
         ("nil".to_string(), TokenType::Nil),
@@ -63,12 +64,15 @@ impl<'a> Scanner<'a> {
     }
 
     fn advance(&mut self) -> char {
-        let char: char = self.source.chars()
-            .nth(self.current)
-            .expect("No character at current index");
+        let char: Option<char> = self.source.chars()
+            .nth(self.current);
+        
         self.current += 1;
 
-        char
+        match char {
+            Some(c) => return c,
+            None => return '\0',
+        }
     }
 
     fn add_token_short(&mut self, token_type: TokenType) {
@@ -108,13 +112,13 @@ impl<'a> Scanner<'a> {
         );
     }
 
-    fn peek(&mut self) -> char {
-        if self.is_at_end() { return '\0'; }
+    fn peek(&mut self) -> Result<char, ScanError>  {
+        if self.is_at_end() { return Ok('\0'); }
 
-        self.source
-            .chars()
-            .nth(self.current)
-            .unwrap()
+        match self.source.chars().nth(self.current) {
+            Some(c) => return Ok(c),
+            None => return Err(ScanError::new("Expected character, recieved None"))
+        }
     }
 
     fn peek_next(&mut self) -> char {
@@ -142,7 +146,7 @@ impl<'a> Scanner<'a> {
         self.is_alpha(character) || self.is_digit(character)
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), ScanError> {
         let c: char = self.advance();
 
         match c {
@@ -162,7 +166,7 @@ impl<'a> Scanner<'a> {
             '<' => self.match_to_type('=', TokenType::Less, TokenType::LessEqual),
             '/' => {
                 if self.match_char('/') {
-                    while (self.peek() != '\n') && (!self.is_at_end()) {
+                    while (self.peek()? != '\n') && (!self.is_at_end()) {
                         self.advance();
                     }
                 } else {
@@ -173,14 +177,14 @@ impl<'a> Scanner<'a> {
             '\n' => self.line += 1,
             ' ' | '\r' | '\t' => (),
 
-            '"' => self.string(),
+            '"' => self.string()?,
             _ => {
                 if self.is_digit(c) {
-                    self.number();
-                    return;
+                    self.number()?;
+                    return Ok(());
                 } else if self.is_alpha(c) {
-                    self.identifier();
-                    return;
+                    self.identifier()?;
+                    return Ok(());
                 }
 
                 self.main.error(self.line, String::from(
@@ -188,13 +192,15 @@ impl<'a> Scanner<'a> {
                 ));
             },
         }
+
+        Ok(())
     }
 
-    fn identifier(&mut self) {
-        let mut peek_next: char = self.peek();
+    fn identifier(&mut self) -> Result<(), ScanError> {
+        let mut peek_next: char = self.peek()?;
         while self.is_alpha_numeric(peek_next) {
             self.advance();
-            peek_next = self.peek();
+            peek_next = self.peek()?;
         }
 
         let mut token_type: TokenType = TokenType::Identifier;
@@ -208,13 +214,15 @@ impl<'a> Scanner<'a> {
         if keyword.is_some() { token_type = keyword.unwrap().clone(); }
 
         self.add_token_short(token_type);
+
+        Ok(())
     }
 
-    fn number(&mut self) {
-        let mut next_char: char = self.peek();
+    fn number(&mut self) -> Result<(), ScanError> {
+        let mut next_char: char = self.peek()?;
         while self.is_digit(next_char) {
             self.advance();
-            next_char = self.peek();
+            next_char = self.peek()?;
         }
 
         let mut peek_next: char = self.peek_next();
@@ -222,7 +230,7 @@ impl<'a> Scanner<'a> {
             self.advance(); // consume the .
             while self.is_digit(next_char) {
                 self.advance();
-                next_char = self.peek();
+                next_char = self.peek()?;
             }
         }
 
@@ -234,11 +242,13 @@ impl<'a> Scanner<'a> {
         let int_literal: f64 = string_literal.parse::<f64>().expect("Failed to parse string to i32");
 
         self.add_token(TokenType::Number, Value::Number(int_literal));
+
+        Ok(())
     }
 
-    fn string(&mut self) {
-        while self.peek() != '"' && !self.is_at_end() {
-            if self.peek() == '\n' { self.line += 1 }
+    fn string(&mut self) -> Result<(), ScanError>  {
+        while self.peek()? != '"' && !self.is_at_end() {
+            if self.peek()? == '\n' { self.line += 1 }
             self.advance();
         }
 
@@ -253,12 +263,19 @@ impl<'a> Scanner<'a> {
             .take((self.current - self.start) - 2)
             .collect();
         self.add_token(TokenType::String, Value::Str(string_literal));
+
+        Ok(())
     }
     
     pub fn scan_tokens(&mut self) -> Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            let result: Result<(), ScanError> = self.scan_token();
+
+            match result {
+                Err(err) => self.main.error(self.line, err.to_string()),
+                _ => ()
+            }
         }
         
         self.tokens.push(Token {token_type: TokenType::EOF, lexeme: "".to_string(), literal: Value::Null, line: self.line});
