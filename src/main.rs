@@ -3,8 +3,11 @@ use std::io::{self, Write};
 use std::fs;
 
 use crate::expr::Expr;
+use crate::parser::Parser;
 use crate::token::Token;
 use crate::token_type::TokenType;
+use crate::scanner::Scanner;
+use crate::astprinter::AstPrinter;
 
 mod scanner;
 mod token;
@@ -14,6 +17,7 @@ mod expr;
 mod astprinter;
 mod parser;
 mod error;
+mod interpreter;
 
 struct Sapphire {
     pub had_error: bool,
@@ -24,13 +28,30 @@ impl Sapphire {
         fs::read_to_string(file_path.as_str())
     }
     
-    fn run(&mut self, file_contents: String) {
-        let mut scan = scanner::Scanner::new(self, file_contents);
-        let tokens = scan.scan_tokens();
-        
-        for token in tokens {
-            println!("{}", token);
+    fn run(&mut self, contents: String) {
+        let mut scanner: Scanner<'_> = Scanner::new(self, contents);
+        let tokens: Vec<Token> = scanner.scan_tokens().clone();
+
+        if self.had_error {
+            return;
         }
+
+        let mut parser: Parser = Parser::new(self, tokens);
+
+        let mut expression: Expr;
+        match parser.parse() {
+            Ok(expr) => expression = expr.clone(),
+            _ => return
+        }
+
+        if self.had_error {
+            return;
+        }
+
+        let mut ast_printer: AstPrinter = AstPrinter {};
+        let output_string: String = ast_printer.print(&expression);
+
+        println!("{}", output_string);
     }
     
     pub fn error(&mut self, line: usize, message: String) {
