@@ -12,7 +12,7 @@ fn define_ast(output_directory: String, base_name: String, types: Vec<String>) -
         "
     );
 
-    ast_string += format!("pub enum {} {{", base_name).as_str();
+    ast_string += format!("#[derive(Clone)]\npub enum {} {{", base_name).as_str();
     
     let mut struct_strings: Vec<String> = vec![];
     let mut struct_names: Vec<String> = vec![];
