@@ -1,5 +1,4 @@
 use crate::expr;
-use crate::token::Token;
 use crate::value::Value;
 
 pub struct AstPrinter;
