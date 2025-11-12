@@ -155,7 +155,13 @@ impl<'a> Scanner<'a> {
             '{' => self.add_token_short(TokenType::LeftBrace),
             '}' => self.add_token_short(TokenType::RightBrace),
             ',' => self.add_token_short(TokenType::Comma),
-            '.' => self.add_token_short(TokenType::Dot),
+            '.' => {
+                if self.match_char('.') {
+                    self.add_token_short(TokenType::DoubleDot);
+                } else {
+                    self.add_token_short(TokenType::Dot);
+                }
+            },
             '-' => self.add_token_short(TokenType::Minus),
             '+' => self.add_token_short(TokenType::Plus),
             ';' => self.add_token_short(TokenType::Semicolon),
@@ -228,6 +234,8 @@ impl<'a> Scanner<'a> {
         let mut peek_next: char = self.peek_next();
         if next_char == '.' && self.is_digit(peek_next) {
             self.advance(); // consume the .
+
+            next_char = self.peek()?;
             while self.is_digit(next_char) {
                 self.advance();
                 next_char = self.peek()?;

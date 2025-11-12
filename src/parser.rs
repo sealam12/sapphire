@@ -136,7 +136,7 @@ impl<'a> Parser<'a> {
     pub fn term(&mut self) -> Result<Expr, ParseError> {
         let mut expr: Expr = self.factor()?;
 
-        while self.match_types(vec![TokenType::Minus, TokenType::Plus]) {
+        while self.match_types(vec![TokenType::Minus, TokenType::Plus, TokenType::DoubleDot]) {
             let operator: Token = self.previous().clone();
             let right: Expr = self.factor()?;
 
