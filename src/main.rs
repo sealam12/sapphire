@@ -2,7 +2,9 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
+use crate::error::RuntimeError;
 use crate::expr::Expr;
+use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -21,9 +23,17 @@ mod interpreter;
 
 struct Sapphire {
     pub had_error: bool,
+    pub had_runtime_error: bool,
 }
 
 impl Sapphire {
+    pub fn new() -> Self {
+        Self {
+            had_error: false,
+            had_runtime_error: false,
+        }
+    }
+
     fn read_file_contents(&self, file_path: String) -> Result<String, io::Error> {
         fs::read_to_string(file_path.as_str())
     }
@@ -48,10 +58,13 @@ impl Sapphire {
             return;
         }
 
-        let mut ast_printer: AstPrinter = AstPrinter {};
-        let output_string: String = ast_printer.print(&expression);
+        let mut interpreter: Interpreter = Interpreter::new(self);
+        interpreter.interpret(&expression);
+    }
 
-        println!("{}", output_string);
+    pub fn runtime_error(&mut self, error: RuntimeError) {
+        println!("[line {}] [RuntimeError] {}", error.line, error.message);
+        self.had_runtime_error = true;
     }
     
     pub fn error(&mut self, line: usize, message: String) {
@@ -66,7 +79,7 @@ impl Sapphire {
     }
     
     pub fn report(&mut self, line: usize, where_at: String, message: String) {
-        println!("[line {line}] Error{where_at}: {message}");
+        println!("[line {line}] [Error{where_at}]: {message}");
         self.had_error = true;
     }
     
@@ -75,7 +88,13 @@ impl Sapphire {
     
         match contents {
             Ok(contents) => self.run(contents),
-            Err(e) => println!("{}", e)
+            Err(e) => println!("There was an error reading the file.")
+        }
+
+        if self.had_error {
+            println!("Exiting with error.");
+        } else if self.had_runtime_error {
+            println!("Exiting with runtime error.");
         }
     }
     
@@ -102,7 +121,7 @@ impl Sapphire {
 }
 
 fn main() -> std::io::Result<()> {
-    let mut sapphire: Sapphire = Sapphire { had_error: false };
+    let mut sapphire: Sapphire = Sapphire::new();
 
     let args: Vec<String> = env::args().collect();
     let args_len: usize = args.len();
