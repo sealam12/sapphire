@@ -7,7 +7,7 @@ macro_rules! define_error {
         #[derive(Debug)]
         // Required for the Error trait
         pub struct $name {
-            message: String,
+            pub message: String,
         }
 
         impl $name {
@@ -30,4 +30,27 @@ macro_rules! define_error {
 
 define_error!(ParseError);
 define_error!(ScanError);
-define_error!(RuntimeError);
+
+#[derive(Debug)]
+// Required for the Error trait
+pub struct RuntimeError {
+    pub message: String,
+    pub line: usize
+}
+
+impl RuntimeError {
+    pub fn new(message: &str, line: usize) -> Self {
+        RuntimeError {
+            message: message.to_string(),
+            line: line,
+        }
+    }
+}
+
+impl fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Error for RuntimeError {}
