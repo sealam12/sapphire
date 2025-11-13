@@ -166,7 +166,7 @@ impl<'a> Scanner<'a> {
             '+' => self.add_token_short(TokenType::Plus),
             ';' => self.add_token_short(TokenType::Semicolon),
             '*' => self.add_token_short(TokenType::Star),
-            '!' => self.match_to_type('=', TokenType::BangEqual, TokenType::Bang),
+            '!' => self.match_to_type('=', TokenType::Bang, TokenType::BangEqual),
             '=' => self.match_to_type('=', TokenType::Equal, TokenType::EqualEqual),
             '>' => self.match_to_type('=', TokenType::Greater, TokenType::GreaterEqual),
             '<' => self.match_to_type('=', TokenType::Less, TokenType::LessEqual),
