@@ -27,7 +27,7 @@ pub fn get_keywords() -> HashMap<String, TokenType> {
         ("if".to_string(), TokenType::If),
         ("nil".to_string(), TokenType::Nil),
         ("or".to_string(), TokenType::Or),
-        ("println".to_string(), TokenType::PrintLn),
+        ("print".to_string(), TokenType::Print),
         ("return".to_string(), TokenType::Return),
         ("super".to_string(), TokenType::Super),
         ("this".to_string(), TokenType::This),
@@ -231,7 +231,7 @@ impl<'a> Scanner<'a> {
             next_char = self.peek()?;
         }
 
-        let mut peek_next: char = self.peek_next();
+        let peek_next: char = self.peek_next();
         if next_char == '.' && self.is_digit(peek_next) {
             self.advance(); // consume the .
 
