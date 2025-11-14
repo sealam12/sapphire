@@ -42,6 +42,14 @@ impl expr::Visitor for AstPrinter {
             unreachable!() // Should not happen
         }
     }
+
+    fn visit_variable(&mut self, expr: &expr::Expr) -> Self::Result {
+        if let expr::Expr::Variable { name } = expr {
+            format!("var {}", name)
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl AstPrinter {
