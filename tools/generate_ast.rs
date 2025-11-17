@@ -2,15 +2,10 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
-fn define_ast(output_directory: String, base_name: String, types: Vec<String>) -> io::Result<()> {
+fn define_ast(output_directory: String, base_name: String, imports: String, types: Vec<String>) -> io::Result<()> {
     let mut path: String = format!("{}/{}.rs", output_directory, base_name.to_lowercase());
 
-    let mut ast_string: String = String::from(
-        "use crate::token::Token;\n\
-        use crate::value::Value;\n\
-        \n\
-        "
-    );
+    let mut ast_string: String = imports + "\n";
 
     ast_string += format!("#[derive(Clone)]\npub enum {} {{", base_name).as_str();
     
@@ -54,7 +49,7 @@ fn define_ast(output_directory: String, base_name: String, types: Vec<String>) -
         \ttype Result;\n"
     );
     for struct_name in &struct_names {
-        visitor_string += format!("\n\tfn visit_{}(&mut self, {}: &{}) -> Self::Result;", struct_name.to_lowercase(), struct_name.to_lowercase(), base_name).as_str();
+        visitor_string += format!("\n\tfn visit_{}(&mut self, {}: &{}) -> Self::Result;", struct_name.to_lowercase(), base_name.to_lowercase(), base_name).as_str();
     }
     visitor_string += "\n}\n\n";
     ast_string += visitor_string.as_str();
@@ -80,8 +75,8 @@ fn define_ast(output_directory: String, base_name: String, types: Vec<String>) -
             .collect();
         
         let mut visitor_impl_string = format!(
-            "\t\t\tExpr::{} {{",
-        struct_name);
+            "\t\t\t{}::{} {{",
+        base_name, struct_name);
 
         for struct_param in struct_params {
             let param_split: Vec<String> = struct_param
@@ -89,7 +84,7 @@ fn define_ast(output_directory: String, base_name: String, types: Vec<String>) -
                 .map(|s| s.to_string())
                 .collect();
             
-            visitor_impl_string += format!("{}, ", param_split[1]).as_str();
+            visitor_impl_string += format!("{}: _, ", param_split[1]).as_str();
         }
             
         visitor_impl_string += format!(
@@ -122,10 +117,25 @@ fn main() {
     }
 
     let output_dir: String = args[1].clone();
-    define_ast(output_dir, "Expr".to_string(), vec![
-        String::from("Binary     :Box<Expr>;left,Token;operator,Box<Expr>;right"),
-        String::from("Grouping   :Box<Expr>;expression"),
-        String::from("Literal    :Value;value"),
-        String::from("Unary      :Token;operator,Box<Expr>;right"),
-    ]);
+    define_ast(output_dir.clone(), "Expr".to_string(), 
+        String::from("use crate::token::Token;\n\
+            use crate::value::Value;"),
+        vec![
+            String::from("Binary     :Box<Expr>;left,Token;operator,Box<Expr>;right"),
+            String::from("Grouping   :Box<Expr>;expression"),
+            String::from("Literal    :Value;value"),
+            String::from("Unary      :Token;operator,Box<Expr>;right"),
+            String::from("Variable   :Token;name")
+        ]
+    );
+
+    define_ast(output_dir.clone(), "Stmt".to_string(), 
+        String::from("use crate::expr::Expr;\n\
+            use crate::token::Token;"),
+        vec![
+            String::from("Expression :Expr;expression"),
+            String::from("Print      :Expr;expression"),
+            String::from("Var        :Token;name,Expr;initializer"),
+        ]
+    );
 }
