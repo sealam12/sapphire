@@ -2,28 +2,31 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
-use crate::error::RuntimeError;
-use crate::expr::Expr;
+use crate::environment::Environment;
 use crate::interpreter::Interpreter;
+use crate::token_type::TokenType;
+use crate::error::RuntimeError;
+use crate::scanner::Scanner;
 use crate::parser::Parser;
 use crate::token::Token;
-use crate::token_type::TokenType;
-use crate::scanner::Scanner;
-use crate::astprinter::AstPrinter;
+use crate::stmt::Stmt;
 
-mod scanner;
-mod token;
-mod token_type;
-mod value;
-mod expr; 
-mod astprinter;
-mod parser;
-mod error;
+mod environment;
 mod interpreter;
+mod token_type;
+mod astprinter;
+mod scanner;
+mod parser;
+mod token;
+mod value;
+mod error;
+mod expr; 
+mod stmt;
 
 struct Sapphire {
     pub had_error: bool,
     pub had_runtime_error: bool,
+    pub environment: Environment,
 }
 
 impl Sapphire {
@@ -31,6 +34,7 @@ impl Sapphire {
         Self {
             had_error: false,
             had_runtime_error: false,
+            environment: Environment::new()
         }
     }
 
@@ -48,18 +52,18 @@ impl Sapphire {
 
         let mut parser: Parser = Parser::new(self, tokens);
 
-        let mut expression: Expr;
+        let statements: Vec<Stmt>;
         match parser.parse() {
-            Ok(expr) => expression = expr.clone(),
-            _ => return
+            Ok(stmts) => statements = stmts.clone(),
+            Err(_) => return
         }
 
         if self.had_error {
             return;
         }
-
+        
         let mut interpreter: Interpreter = Interpreter::new(self);
-        interpreter.interpret(&expression);
+        interpreter.interpret(&statements);
     }
 
     pub fn runtime_error(&mut self, error: RuntimeError) {
@@ -84,11 +88,11 @@ impl Sapphire {
     }
     
     fn run_file(&mut self, filename: String) {
-        let mut contents = self.read_file_contents(filename);
+        let contents = self.read_file_contents(filename);
     
         match contents {
             Ok(contents) => self.run(contents),
-            Err(e) => println!("There was an error reading the file.")
+            Err(_) => println!("There was an error reading the file.")
         }
 
         if self.had_error {

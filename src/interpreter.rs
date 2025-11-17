@@ -1,7 +1,8 @@
-use crate::expr::{self, Expr};
-use crate::token::Token;
-use crate::token_type::{self, TokenType};
+use crate::environment::Environment;
+use crate::token_type::TokenType;
 use crate::error::RuntimeError;
+use crate::expr::{self, Expr};
+use crate::stmt::{self, Stmt};
 use crate::value::Value;
 use super::Sapphire;
 
@@ -16,18 +17,21 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    pub fn interpret(&mut self, expression: &Expr) {
-        let result: Result<Value, RuntimeError> = self.evaluate(expression);
-
-        match result {
-            Ok(val) => {
-                println!("{:?}", val);
-            },
-
-            Err(error) => {
-                self.main.runtime_error(error);
+    pub fn interpret(&mut self, statements: &Vec<Stmt>) {
+        for statement in statements {
+            let result: Result<(), RuntimeError> = self.execute(&statement);
+    
+            match result {
+                Err(error) => {
+                    self.main.runtime_error(error);
+                },
+                Ok(_) => ()
             }
         }
+    }
+
+    pub fn execute(&mut self, statement: &Stmt) -> Result<(), RuntimeError> {
+        statement.accept(self)
     }
 
     pub fn evaluate(&mut self, expression: &Expr) -> Result<Value, RuntimeError> {
@@ -93,7 +97,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                     _ => Err(RuntimeError::new("OperationError - Unsupported operand for binary operation on Number", operator.line))
                 }
             } else {
-                if let (Value::Str(sl), Value::Str(sr)) = (&result_left, &result_right) {
+                if let (Value::Str(_), Value::Str(_)) = (&result_left, &result_right) {
                     return Err(RuntimeError::new("TypeError - Unsupported operation for Str", operator.line));
                 }
 
@@ -117,7 +121,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             let result_right: Value = self.evaluate(right)?;
 
             match result_right {
-                Value::Str(val) => return Err(RuntimeError::new("TypeError - Invalid type for unary: 'Str', operand must be Number", operator.line)),
+                Value::Str(_) => return Err(RuntimeError::new("TypeError - Invalid type for unary: 'Str', operand must be Number", operator.line)),
                 Value::Null => return Err(RuntimeError::new("TypeError - Invalid type for unary: 'Null', operand must be Number", operator.line)),
                 _ => ()
             }
@@ -125,8 +129,8 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             match operator.token_type {
                 TokenType::Bang => {
                     match result_right {
-                        Value::Bool(val) => Ok(Value::Bool(!self.is_truthy(&result_right)?)),
-                        Value::Number(val ) => Ok(Value::Bool(!self.is_truthy(&result_right)?)),
+                        Value::Bool(_) => Ok(Value::Bool(!self.is_truthy(&result_right)?)),
+                        Value::Number(_ ) => Ok(Value::Bool(!self.is_truthy(&result_right)?)),
                         _ => unreachable!()
                     }
                 },
@@ -139,6 +143,49 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                 }
                 _ => unreachable!()
             }
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_variable(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::Variable { name } = expr {
+            self.main.environment.get(name)
+        } else {
+            unreachable!()
+        }
+    }
+}
+
+impl<'a> stmt::Visitor for Interpreter<'a> {
+    type Result = Result<(), RuntimeError>;
+
+    fn visit_var(&mut self, statement: &Stmt) -> Self::Result {
+        if let Stmt::Var { name, initializer } = statement {
+            let val: Value = self.evaluate(initializer)?;
+
+            self.main.environment.define(name.lexeme.clone(), val);
+
+            Ok(())
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_expression(&mut self, statement: &Stmt) -> Self::Result {
+        if let Stmt::Expression { expression } = statement {
+            let _ = self.evaluate(&expression)?;
+            Ok(())
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_print(&mut self, statement: &Stmt) -> Self::Result {
+        if let Stmt::Print { expression } = statement {
+            let result: Value = self.evaluate(&expression)?;
+            println!("{}", result.to_string());
+            Ok(())
         } else {
             unreachable!()
         }

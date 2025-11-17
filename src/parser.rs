@@ -1,10 +1,10 @@
-use std::error::Error;
-
+use crate::astprinter::AstPrinter;
 use crate::error::ParseError;
 use crate::token::Token;
 use crate::token_type::TokenType;
 use crate::value::Value;
 use crate::expr::Expr;
+use crate::stmt::Stmt;
 use super::Sapphire;
 
 pub struct Parser<'a> {
@@ -39,7 +39,7 @@ impl<'a> Parser<'a> {
             match peeked_token.token_type {
                 TokenType::Class | TokenType::Fn | TokenType::Var | 
                     TokenType::For | TokenType::If | TokenType::While | 
-                    TokenType::PrintLn | TokenType::Return => return,
+                    TokenType::Print | TokenType::Return => return,
                 _ => (),
             }
 
@@ -96,8 +96,72 @@ impl<'a> Parser<'a> {
         Err(self.error(next_token, message))
     }
 
-    pub fn parse(&mut self) -> Result<Expr, impl Error> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut statements: Vec<Stmt> = vec![];
+
+        while !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+
+        Ok(statements)
+    }
+
+    pub fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_types(vec![TokenType::Var]) {
+            match self.var_declaration() {
+                Ok(stmt) => return Ok(stmt),
+                Err(err) => {
+                    self.synchronize();
+                    return Err(err)
+                }
+            }
+        }
+
+
+        match self.statement() {
+            Ok(stmt) => Ok(stmt),
+            Err(err) => {
+                self.synchronize();
+                Err(err)
+            }
+        }
+    }
+
+    pub fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name: Token = self.consume(TokenType::Identifier, "Expected variable name.".to_string())?.clone();
+
+        let mut initializer: Expr = Expr::Literal { value: Value::Null };
+
+        let matched: bool = self.match_types(vec![TokenType::Equal]);
+        if matched {
+            initializer = self.expression()?.clone();
+        }
+
+        self.consume(TokenType::Semicolon, "Expected ';' after variable declaration.".to_string())?;
+
+        Ok(Stmt::Var { name: name, initializer: initializer })
+    }
+
+    pub fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_types(vec![TokenType::Print]) {
+            self.print_statement()
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    pub fn print_statement(&mut self) -> Result<Stmt, ParseError> {
+        let value: Expr = self.expression()?;
+        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_string())?;
+
+        Ok(Stmt::Print { expression: value })
+    }
+
+    pub fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
+        let value: Expr = self.expression()?;
+        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_string())?;
+
+        Ok(Stmt::Expression { expression: value })
     }
 
     pub fn expression(&mut self) -> Result<Expr, ParseError> {
@@ -178,7 +242,10 @@ impl<'a> Parser<'a> {
             TokenType::False => return Ok(Expr::Literal { value: Value::Bool(false) }),
             TokenType::Nil => return Ok(Expr::Literal { value: Value::Null }),
             TokenType::Number | TokenType::String => {
-                return Ok(Expr::Literal { value: next_token.literal })
+                return Ok(Expr::Literal { value: next_token.literal });
+            },
+            TokenType::Identifier => {
+                return Ok(Expr::Variable { name: self.previous().clone() });
             },
             TokenType::LeftParen => {
                 let expr: Expr = self.expression()?;
