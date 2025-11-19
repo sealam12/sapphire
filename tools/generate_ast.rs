@@ -117,10 +117,12 @@ fn main() {
     }
 
     let output_dir: String = args[1].clone();
-    define_ast(output_dir.clone(), "Expr".to_string(), 
+    define_ast(output_dir.clone(), "Expr".to_owned(), 
         String::from("use crate::token::Token;\n\
             use crate::value::Value;"),
         vec![
+
+            String::from("Assign     :Token;name,Box<Expr>;value"),
             String::from("Binary     :Box<Expr>;left,Token;operator,Box<Expr>;right"),
             String::from("Grouping   :Box<Expr>;expression"),
             String::from("Literal    :Value;value"),
@@ -129,10 +131,11 @@ fn main() {
         ]
     );
 
-    define_ast(output_dir.clone(), "Stmt".to_string(), 
+    define_ast(output_dir.clone(), "Stmt".to_owned(), 
         String::from("use crate::expr::Expr;\n\
             use crate::token::Token;"),
         vec![
+            String::from("Block      :Vec<Stmt>;statements"),
             String::from("Expression :Expr;expression"),
             String::from("Print      :Expr;expression"),
             String::from("Var        :Token;name,Expr;initializer"),

@@ -18,22 +18,22 @@ pub struct Scanner<'a> {
 
 pub fn get_keywords() -> HashMap<String, TokenType> {
     HashMap::from([
-        ("and".to_string(), TokenType::And),
-        ("class".to_string(), TokenType::Class),
-        ("else".to_string(), TokenType::Else),
-        ("false".to_string(), TokenType::False),
-        ("fn".to_string(), TokenType::Fn),
-        ("for".to_string(), TokenType::For),
-        ("if".to_string(), TokenType::If),
-        ("nil".to_string(), TokenType::Nil),
-        ("or".to_string(), TokenType::Or),
-        ("print".to_string(), TokenType::Print),
-        ("return".to_string(), TokenType::Return),
-        ("super".to_string(), TokenType::Super),
-        ("this".to_string(), TokenType::This),
-        ("true".to_string(), TokenType::True),
-        ("var".to_string(), TokenType::Var),
-        ("while".to_string(), TokenType::While),  
+        ("and".to_owned(), TokenType::And),
+        ("class".to_owned(), TokenType::Class),
+        ("else".to_owned(), TokenType::Else),
+        ("false".to_owned(), TokenType::False),
+        ("fn".to_owned(), TokenType::Fn),
+        ("for".to_owned(), TokenType::For),
+        ("if".to_owned(), TokenType::If),
+        ("nil".to_owned(), TokenType::Nil),
+        ("or".to_owned(), TokenType::Or),
+        ("print".to_owned(), TokenType::Print),
+        ("return".to_owned(), TokenType::Return),
+        ("super".to_owned(), TokenType::Super),
+        ("this".to_owned(), TokenType::This),
+        ("true".to_owned(), TokenType::True),
+        ("var".to_owned(), TokenType::Var),
+        ("while".to_owned(), TokenType::While),  
     ])
 }
 
@@ -286,7 +286,7 @@ impl<'a> Scanner<'a> {
             }
         }
         
-        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: "".to_string(), literal: Value::Null, line: self.line});
+        self.tokens.push(Token {token_type: TokenType::EOF, lexeme: "".to_owned(), literal: Value::Null, line: self.line});
         self.tokens.clone()
     }
 }

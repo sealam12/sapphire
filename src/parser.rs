@@ -64,8 +64,8 @@ impl<'a> Parser<'a> {
             return Ok(self.previous());
         }
 
-        self.main.error(0 as usize, "Expected expression".to_string());
-        Err(ParseError::new("Expected expression"))
+        let previous: Token = self.previous().clone();
+        Err(self.error(previous, "Expected token, got EOF".to_owned()))
     }
 
     pub fn check(&mut self, token_type: TokenType) -> bool {
@@ -125,7 +125,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
-        let name: Token = self.consume(TokenType::Identifier, "Expected variable name.".to_string())?.clone();
+        let name: Token = self.consume(TokenType::Identifier, "Expected variable name.".to_owned())?.clone();
 
         let mut initializer: Expr = Expr::Literal { value: Value::Null };
 
@@ -134,7 +134,7 @@ impl<'a> Parser<'a> {
             initializer = self.expression()?.clone();
         }
 
-        self.consume(TokenType::Semicolon, "Expected ';' after variable declaration.".to_string())?;
+        self.consume(TokenType::Semicolon, "Expected ';' after variable declaration.".to_owned())?;
 
         Ok(Stmt::Var { name: name, initializer: initializer })
     }
@@ -142,21 +142,35 @@ impl<'a> Parser<'a> {
     pub fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_types(vec![TokenType::Print]) {
             self.print_statement()
+        } else if self.match_types(vec![TokenType::LeftBrace]) {
+            self.block_statement()
         } else {
             self.expression_statement()
         }
     }
 
+    pub fn block_statement(&mut self) -> Result<Stmt, ParseError> {
+        let mut statements: Vec<Stmt> = vec![];
+
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+
+        self.consume(TokenType::RightBrace, "Expected '}' to close block.".to_owned())?;
+        
+        Ok(Stmt::Block { statements })
+    }
+
     pub fn print_statement(&mut self) -> Result<Stmt, ParseError> {
         let value: Expr = self.expression()?;
-        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_string())?;
+        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_owned())?;
 
         Ok(Stmt::Print { expression: value })
     }
 
     pub fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let value: Expr = self.expression()?;
-        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_string())?;
+        let _ = self.consume(TokenType::Semicolon, "Exepcted ; to follow value".to_owned())?;
 
         Ok(Stmt::Expression { expression: value })
     }
@@ -176,7 +190,7 @@ impl<'a> Parser<'a> {
                 Expr::Variable { name } => {
                     return Ok(Expr::Assign { name, value: Box::new(value) });
                 }
-                _ => return Err(self.error(equals, "Invalid assignment target.".to_string()))
+                _ => return Err(self.error(equals, "Invalid assignment target.".to_owned()))
             }
         }
 
@@ -270,6 +284,6 @@ impl<'a> Parser<'a> {
             _ => {}
         }
 
-        Err(self.error(next_token, "Expected expression".to_string()))
+        Err(self.error(next_token, "Expected expression".to_owned()))
     }
 } 

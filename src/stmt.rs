@@ -2,6 +2,10 @@ use crate::expr::Expr;
 use crate::token::Token;
 #[derive(Clone)]
 pub enum Stmt {
+	Block {
+		statements: Vec<Stmt>,
+	},
+
 	Expression {
 		expression: Expr,
 	},
@@ -19,6 +23,7 @@ pub enum Stmt {
 pub trait Visitor {
 	type Result;
 
+	fn visit_block(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_expression(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_print(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_var(&mut self, stmt: &Stmt) -> Self::Result;
@@ -27,6 +32,9 @@ pub trait Visitor {
 impl Stmt {
 	pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::Result {
 		match self {
+			Stmt::Block {statements: _,  } => {
+				visitor.visit_block(self)
+			}
 			Stmt::Expression {expression: _,  } => {
 				visitor.visit_expression(self)
 			}

@@ -28,7 +28,7 @@ impl expr::Visitor for AstPrinter {
                 Value::Number(n) => n.to_string(),
                 Value::Str(s) => format!("\"{}\"", s),
                 Value::Bool(b) => b.to_string(),
-                Value::Null => "null".to_string(),
+                Value::Null => "null".to_owned(),
             }
         } else {
             unreachable!() // Should not happen

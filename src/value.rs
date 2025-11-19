@@ -12,7 +12,7 @@ impl Value {
             Value::Str(str) => str.clone(),
             Value::Number(num) => num.to_string(),
             Value::Bool(bool) => bool.to_string(),
-            Value::Null => "nil".to_string(),
+            Value::Null => "nil".to_owned(),
         }
     }
 }

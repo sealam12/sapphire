@@ -1,3 +1,4 @@
+use crate::environment::Environment;
 use crate::token_type::TokenType;
 use crate::error::RuntimeError;
 use crate::expr::{self, Expr};
@@ -31,6 +32,28 @@ impl<'a> Interpreter<'a> {
 
     pub fn execute(&mut self, statement: &Stmt) -> Result<(), RuntimeError> {
         statement.accept(self)
+    }
+
+    pub fn execute_block(&mut self, block: &Stmt, environment: Environment) -> Result<(), RuntimeError> {
+        if let Stmt::Block { statements } = block {
+            let previous_environment = self.main.environment.clone();
+    
+            let result: Result<(), RuntimeError> =  {
+                self.main.environment = environment;
+    
+                for stmt in statements {
+                    self.execute(stmt)?
+                }
+    
+                Ok(())
+            };
+    
+            self.main.environment = previous_environment;
+
+            result
+        } else {
+            unreachable!()
+        }
     }
 
     pub fn evaluate(&mut self, expression: &Expr) -> Result<Value, RuntimeError> {
@@ -200,5 +223,13 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
         } else {
             unreachable!()
         }
+    }
+
+    fn visit_block(&mut self, stmt: &Stmt) -> Self::Result {
+        let new_environment: Option<Box<Environment>> = Option::Some(
+            Box::new(self.main.environment.clone())
+        );
+
+        self.execute_block(stmt, Environment::new(new_environment ))
     }
 }
