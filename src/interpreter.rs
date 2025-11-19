@@ -1,4 +1,3 @@
-use crate::environment::Environment;
 use crate::token_type::TokenType;
 use crate::error::RuntimeError;
 use crate::expr::{self, Expr};
@@ -155,6 +154,18 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             unreachable!()
         }
     }
+
+    fn visit_assign(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::Assign { name, value } = expr {
+            let new_value: Value = self.evaluate(value)?;
+
+            self.main.environment.assign(name, new_value.clone())?;
+
+            Ok(new_value)
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl<'a> stmt::Visitor for Interpreter<'a> {
@@ -164,7 +175,7 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
         if let Stmt::Var { name, initializer } = statement {
             let val: Value = self.evaluate(initializer)?;
 
-            self.main.environment.define(name.lexeme.clone(), val);
+            self.main.environment.define(name, val)?;
 
             Ok(())
         } else {

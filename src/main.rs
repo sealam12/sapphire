@@ -34,7 +34,7 @@ impl Sapphire {
         Self {
             had_error: false,
             had_runtime_error: false,
-            environment: Environment::new()
+            environment: Environment::new(Option::None)
         }
     }
 

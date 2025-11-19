@@ -50,6 +50,15 @@ impl expr::Visitor for AstPrinter {
             unreachable!()
         }
     }
+
+    fn visit_assign(&mut self, expr: &expr::Expr) -> Self::Result {
+        if let expr::Expr::Assign { name, value } = expr {
+            let formatted_str: &str = &*value.accept(self);
+            format!("assign {} = {}", name, formatted_str)
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl AstPrinter {

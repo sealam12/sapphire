@@ -1,4 +1,3 @@
-use crate::astprinter::AstPrinter;
 use crate::error::ParseError;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -165,7 +164,25 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    pub fn assignment(&mut self) -> Result<Expr, ParseError> {
+        let expr: Expr = self.equality()?;
+
+        if self.match_types(vec![TokenType::Equal]) {
+            let equals: Token = self.previous().clone();
+            let value: Expr = self.assignment()?;
+
+            match expr {
+                Expr::Variable { name } => {
+                    return Ok(Expr::Assign { name, value: Box::new(value) });
+                }
+                _ => return Err(self.error(equals, "Invalid assignment target.".to_string()))
+            }
+        }
+
+        Ok(expr)
     }
 
     pub fn equality(&mut self) -> Result<Expr, ParseError> {

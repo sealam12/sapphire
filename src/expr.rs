@@ -2,6 +2,11 @@ use crate::token::Token;
 use crate::value::Value;
 #[derive(Clone)]
 pub enum Expr {
+	Assign {
+		name: Token,
+		value: Box<Expr>,
+	},
+
 	Binary {
 		left: Box<Expr>,
 		operator: Token,
@@ -29,6 +34,7 @@ pub enum Expr {
 pub trait Visitor {
 	type Result;
 
+	fn visit_assign(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_binary(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_grouping(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_literal(&mut self, expr: &Expr) -> Self::Result;
@@ -39,6 +45,9 @@ pub trait Visitor {
 impl Expr {
 	pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::Result {
 		match self {
+			Expr::Assign {name: _, value: _,  } => {
+				visitor.visit_assign(self)
+			}
 			Expr::Binary {left: _, operator: _, right: _,  } => {
 				visitor.visit_binary(self)
 			}
