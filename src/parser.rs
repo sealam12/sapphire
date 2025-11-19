@@ -106,18 +106,16 @@ impl<'a> Parser<'a> {
     }
 
     pub fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        let mut stmt: Result<Stmt, ParseError>;
+
         if self.match_types(vec![TokenType::Var]) {
-            match self.var_declaration() {
-                Ok(stmt) => return Ok(stmt),
-                Err(err) => {
-                    self.synchronize();
-                    return Err(err)
-                }
-            }
+            stmt = self.var_declaration();
+        } else {
+            stmt = self.statement();
         }
 
 
-        match self.statement() {
+        match stmt {
             Ok(stmt) => Ok(stmt),
             Err(err) => {
                 self.synchronize();
