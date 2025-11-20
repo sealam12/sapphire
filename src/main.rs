@@ -15,6 +15,7 @@ mod environment;
 mod interpreter;
 mod token_type;
 mod astprinter;
+mod variable;
 mod scanner;
 mod parser;
 mod token;
