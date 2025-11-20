@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
         }
 
         let previous: Token = self.previous().clone();
-        Err(self.error(previous, "Expected token, got EOF".to_owned()))
+        Err(ParseError::new("Expected token, got EOF"))
     }
 
     pub fn check(&mut self, token_type: TokenType) -> bool {
@@ -113,7 +113,6 @@ impl<'a> Parser<'a> {
         } else {
             stmt = self.statement();
         }
-
 
         match stmt {
             Ok(stmt) => Ok(stmt),

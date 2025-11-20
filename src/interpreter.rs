@@ -120,7 +120,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                 }
             } else {
                 if let (Value::Str(_), Value::Str(_)) = (&result_left, &result_right) {
-                    return Err(RuntimeError::new("TypeError - Unsupported operation for Str", operator.line));
+                    return Err(RuntimeError::new("TypeError - Unsupported operation for Str. Maybe you meant to use '..' instead?", operator.line));
                 }
 
                 Err(RuntimeError::new("TypeError - Type mismatch for operands of binary operation.", operator.line))
