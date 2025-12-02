@@ -24,12 +24,7 @@ impl expr::Visitor for AstPrinter {
 
     fn visit_literal(&mut self, expr: &expr::Expr) -> Self::Result {
         if let expr::Expr::Literal { value } = expr {
-            match value {
-                Value::Number(n) => n.to_string(),
-                Value::Str(s) => format!("\"{}\"", s),
-                Value::Bool(b) => b.to_string(),
-                Value::Null => "null".to_owned(),
-            }
+            value.to_string()
         } else {
             unreachable!() // Should not happen
         }
@@ -53,10 +48,30 @@ impl expr::Visitor for AstPrinter {
 
     fn visit_assign(&mut self, expr: &expr::Expr) -> Self::Result {
         if let expr::Expr::Assign { name, value } = expr {
-            let formatted_str: &str = &*value.accept(self);
-            format!("assign {} = {}", name, formatted_str)
+            let formatted_str: &str = &value.accept(self);
+            format!("(= {} {})", name, formatted_str)
         } else {
             unreachable!()
+        }
+    }
+
+    fn visit_ternary(&mut self, expr: &expr::Expr) -> Self::Result {
+        if let expr::Expr::Ternary { condition, if_true, if_false } = expr {
+            let fmt_condition: &str = &condition.accept(self);
+            let fmt_true: &str = &if_true.accept(self);
+            let fmt_false: &str = &if_false.accept(self);
+
+            format!("({} ? {} : {})", fmt_condition, fmt_true, fmt_false)
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_logical(&mut self, expr: &expr::Expr) -> Self::Result {
+        if let expr::Expr::Logical { left, operator, right } = expr {
+            self.parenthesize(&operator.lexeme, &[left, right])
+        } else {
+            unreachable!() // Should not happen with correct usage
         }
     }
 }
