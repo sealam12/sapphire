@@ -332,6 +332,17 @@ impl<'a> Parser<'a> {
                 self.consume(TokenType::RightParen, String::from("Expect ')' to close grouping expression."))?;
                 return Ok(Expr::Grouping { expression: Box::new(expr) });
             },
+            TokenType::LeftBracket => {
+                let mut list: Vec<Expr> = vec![];
+                while !self.match_types(vec![TokenType::RightBracket]) {
+                    list.push(self.expression()?);
+
+                    self.match_types(vec![TokenType::Comma]);
+                }
+
+                return Ok(Expr::List { expressions: list })
+            },
+
             _ => {}
         }
 

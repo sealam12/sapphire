@@ -73,6 +73,14 @@ impl expr::Visitor for AstPrinter {
             unreachable!()
         }
     }
+
+    fn visit_list(&mut self, expr: &expr::Expr) -> Self::Result {
+        if let expr::Expr::List { expressions } = expr {
+            "List".to_owned()
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl AstPrinter {

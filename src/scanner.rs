@@ -155,6 +155,8 @@ impl<'a> Scanner<'a> {
             ')' => self.add_token_short(TokenType::RightParen),
             '{' => self.add_token_short(TokenType::LeftBrace),
             '}' => self.add_token_short(TokenType::RightBrace),
+            '[' => self.add_token_short(TokenType::LeftBracket),
+            ']' => self.add_token_short(TokenType::RightBracket),
             ',' => self.add_token_short(TokenType::Comma),
             '.' => {
                 if self.match_char('.') {

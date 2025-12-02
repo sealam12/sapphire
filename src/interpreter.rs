@@ -237,6 +237,20 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             unreachable!()
         }
     }
+
+    fn visit_list(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::List { expressions } = expr {
+            let mut vals: Vec<Value> = vec![];
+
+            for expr in expressions {
+                vals.push(self.evaluate(expr)?);
+            }
+
+            Ok(Value::List(vals))
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl<'a> stmt::Visitor for Interpreter<'a> {

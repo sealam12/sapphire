@@ -126,6 +126,7 @@ fn main() {
         String::from("use crate::token::Token;\n\
             use crate::value::Value;"),
         vec![
+            String::from("List       :Vec<Expr> expressions"),
             String::from("Ternary    :Box<Expr> condition, Box<Expr> if_true, Box<Expr> if_false"),
             String::from("Assign     :Token name, Box<Expr> value"),
             String::from("Binary     :Box<Expr> left, Token operator, Box<Expr> right"),
