@@ -2,6 +2,7 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
+use crate::astprinter::AstPrinter;
 use crate::environment::Environment;
 use crate::interpreter::Interpreter;
 use crate::token_type::TokenType;
@@ -15,7 +16,6 @@ mod environment;
 mod interpreter;
 mod token_type;
 mod astprinter;
-mod variable;
 mod scanner;
 mod parser;
 mod token;
@@ -52,6 +52,8 @@ impl Sapphire {
         }
 
         let mut parser: Parser = Parser::new(self, tokens);
+
+        let mut ast_printer = AstPrinter {};
 
         let statements: Vec<Stmt>;
         match parser.parse() {

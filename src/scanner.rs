@@ -25,6 +25,7 @@ pub fn get_keywords() -> HashMap<String, TokenType> {
         ("fn".to_owned(), TokenType::Fn),
         ("for".to_owned(), TokenType::For),
         ("if".to_owned(), TokenType::If),
+        ("in".to_owned(), TokenType::In),
         ("nil".to_owned(), TokenType::Nil),
         ("or".to_owned(), TokenType::Or),
         ("print".to_owned(), TokenType::Print),
@@ -164,12 +165,18 @@ impl<'a> Scanner<'a> {
             },
             '-' => self.add_token_short(TokenType::Minus),
             '+' => self.add_token_short(TokenType::Plus),
+            ':' => self.add_token_short(TokenType::Colon),
             ';' => self.add_token_short(TokenType::Semicolon),
+            '?' => self.add_token_short(TokenType::QuestionMark),
             '*' => self.add_token_short(TokenType::Star),
+
+            '&' => self.match_to_type('&', TokenType::Amp, TokenType::DoubleAmp),
+            '|' => self.match_to_type('|', TokenType::Pipe, TokenType::DoublePipe),
             '!' => self.match_to_type('=', TokenType::Bang, TokenType::BangEqual),
             '=' => self.match_to_type('=', TokenType::Equal, TokenType::EqualEqual),
             '>' => self.match_to_type('=', TokenType::Greater, TokenType::GreaterEqual),
             '<' => self.match_to_type('=', TokenType::Less, TokenType::LessEqual),
+            
             '/' => {
                 if self.match_char('/') {
                     while (self.peek()? != '\n') && (!self.is_at_end()) {

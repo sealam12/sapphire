@@ -18,6 +18,17 @@ pub enum Stmt {
 		name: Token,
 		initializer: Expr,
 	},
+
+	If {
+		condition: Expr,
+		then_branch: Box<Stmt>,
+		else_branch: Option<Box<Stmt>>,
+	},
+
+	While {
+		condition: Expr,
+		body: Box<Stmt>,
+	},
 }
 
 pub trait Visitor {
@@ -27,6 +38,8 @@ pub trait Visitor {
 	fn visit_expression(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_print(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_var(&mut self, stmt: &Stmt) -> Self::Result;
+	fn visit_if(&mut self, stmt: &Stmt) -> Self::Result;
+	fn visit_while(&mut self, stmt: &Stmt) -> Self::Result;
 }
 
 impl Stmt {
@@ -43,6 +56,12 @@ impl Stmt {
 			}
 			Stmt::Var {name: _, initializer: _,  } => {
 				visitor.visit_var(self)
+			}
+			Stmt::If {condition: _, then_branch: _, else_branch: _,  } => {
+				visitor.visit_if(self)
+			}
+			Stmt::While {condition: _, body: _,  } => {
+				visitor.visit_while(self)
 			}
 		}
 	}

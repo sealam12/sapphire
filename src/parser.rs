@@ -143,9 +143,34 @@ impl<'a> Parser<'a> {
             self.print_statement()
         } else if self.match_types(vec![TokenType::LeftBrace]) {
             self.block_statement()
+        } else if self.match_types(vec![TokenType::If]) {
+            self.if_statement()
+        } else if self.match_types(vec![TokenType::While]) {
+            self.while_statement()
         } else {
             self.expression_statement()
         }
+    }
+
+    pub fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        let condition: Expr = self.expression()?;
+        let then_branch: Stmt = self.statement()?;
+        let mut else_branch: Option<Box<Stmt>> = Option::None;
+
+        if self.match_types(vec![TokenType::Else]) {
+            else_branch = Some(Box::new(
+                self.statement()?
+            ));
+        }
+
+        Ok(Stmt::If { condition, then_branch: Box::new(then_branch), else_branch })
+    }
+
+    pub fn while_statement(&mut self) -> Result<Stmt, ParseError> {
+        let condition: Expr = self.expression()?;
+        let body: Box<Stmt> = Box::new(self.statement()?);
+
+        Ok(Stmt::While { condition, body })
     }
 
     pub fn block_statement(&mut self) -> Result<Stmt, ParseError> {
@@ -175,11 +200,25 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.assignment()
+        self.shorthand_if()
+    }
+
+    pub fn shorthand_if(&mut self) -> Result<Expr, ParseError> {
+        let expr: Expr = self.assignment()?;
+
+        if self.match_types(vec![TokenType::QuestionMark]) {
+            let if_true: Expr = self.shorthand_if()?;
+            self.consume(TokenType::Colon, "Expected ':' to seperate true from false clause in shorthand-if".to_owned())?;
+            let if_false: Expr = self.shorthand_if()?;
+
+            return Ok(Expr::Ternary { condition: Box::new(expr), if_true: Box::new(if_true), if_false: Box::new(if_false) });
+        }
+
+        Ok(expr)
     }
 
     pub fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr: Expr = self.equality()?;
+        let expr: Expr = self.logical()?;
 
         if self.match_types(vec![TokenType::Equal]) {
             let equals: Token = self.previous().clone();
@@ -191,6 +230,19 @@ impl<'a> Parser<'a> {
                 }
                 _ => return Err(self.error(equals, "Invalid assignment target.".to_owned()))
             }
+        }
+
+        Ok(expr)
+    }
+    
+    pub fn logical(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.equality()?;
+
+        while self.match_types(vec![TokenType::DoubleAmp, TokenType::DoublePipe]) {
+            let operator: Token = self.previous().clone();
+            let right: Expr = self.equality()?;
+
+            expr = Expr::Logical { left: Box::new(expr), operator, right: Box::new(right) };
         }
 
         Ok(expr)

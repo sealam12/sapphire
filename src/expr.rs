@@ -2,12 +2,24 @@ use crate::token::Token;
 use crate::value::Value;
 #[derive(Clone)]
 pub enum Expr {
+	Ternary {
+		condition: Box<Expr>,
+		if_true: Box<Expr>,
+		if_false: Box<Expr>,
+	},
+
 	Assign {
 		name: Token,
 		value: Box<Expr>,
 	},
 
 	Binary {
+		left: Box<Expr>,
+		operator: Token,
+		right: Box<Expr>,
+	},
+
+	Logical {
 		left: Box<Expr>,
 		operator: Token,
 		right: Box<Expr>,
@@ -34,8 +46,10 @@ pub enum Expr {
 pub trait Visitor {
 	type Result;
 
+	fn visit_ternary(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_assign(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_binary(&mut self, expr: &Expr) -> Self::Result;
+	fn visit_logical(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_grouping(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_literal(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_unary(&mut self, expr: &Expr) -> Self::Result;
@@ -45,11 +59,17 @@ pub trait Visitor {
 impl Expr {
 	pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::Result {
 		match self {
+			Expr::Ternary {condition: _, if_true: _, if_false: _,  } => {
+				visitor.visit_ternary(self)
+			}
 			Expr::Assign {name: _, value: _,  } => {
 				visitor.visit_assign(self)
 			}
 			Expr::Binary {left: _, operator: _, right: _,  } => {
 				visitor.visit_binary(self)
+			}
+			Expr::Logical {left: _, operator: _, right: _,  } => {
+				visitor.visit_logical(self)
 			}
 			Expr::Grouping {expression: _,  } => {
 				visitor.visit_grouping(self)

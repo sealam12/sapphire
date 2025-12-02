@@ -64,6 +64,7 @@ impl<'a> Interpreter<'a> {
         match *value {
             Value::Str(_) => Ok(true),
             Value::Number(_) => Ok(true),
+            Value::List(_) => Ok(true),
             Value::Bool(bool_value) => Ok(bool_value),
             Value::Null => Ok(false)
         }
@@ -116,7 +117,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                     TokenType::BangEqual => Ok(Value::Bool(nl != nr)),
                     TokenType::EqualEqual => Ok(Value::Bool(nl == nr)),
 
-                    _ => Err(RuntimeError::new("OperationError - Unsupported operand for binary operation on Number", operator.line))
+                    _ => Err(RuntimeError::new("OperationError - Invalid operand for binary expression", operator.line))
                 }
             } else {
                 if let (Value::Str(_), Value::Str(_)) = (&result_left, &result_right) {
@@ -124,6 +125,40 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                 }
 
                 Err(RuntimeError::new("TypeError - Type mismatch for operands of binary operation.", operator.line))
+            }
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_logical(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::Logical { left, operator, right } = expr {
+            match operator.token_type {
+                TokenType::DoubleAmp => {
+                    let left: Value = self.evaluate(left)?; 
+
+                    if !self.is_truthy(&left)? {
+                        return Ok(Value::Bool(false));
+                    }
+
+                    let right: Value = self.evaluate(right)?;
+
+                    return Ok(Value::Bool(self.is_truthy(&left)? && self.is_truthy(&right)?));
+                }
+
+                TokenType::DoublePipe => {
+                    let left: Value = self.evaluate(left)?; 
+
+                    if self.is_truthy(&left)? {
+                        return Ok(Value::Bool(true));
+                    }
+
+                    let right: Value = self.evaluate(right)?;
+
+                    return Ok(Value::Bool(self.is_truthy(&left)? || self.is_truthy(&right)?)); 
+                }
+
+                _ => Err(RuntimeError::new("Invalid logical expression operand.", operator.line))
             }
         } else {
             unreachable!()
@@ -189,6 +224,19 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             unreachable!()
         }
     }
+
+    fn visit_ternary(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::Ternary { condition, if_true, if_false } = expr {
+            let condition_value = self.evaluate(&condition)?;
+            if self.is_truthy(&condition_value)? {
+                self.evaluate(&if_true)
+            } else {
+                self.evaluate(&if_false)
+            }
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl<'a> stmt::Visitor for Interpreter<'a> {
@@ -231,5 +279,41 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
         );
 
         self.execute_block(stmt, Environment::new(new_environment ))
+    }
+
+    fn visit_if(&mut self, stmt: &Stmt) -> Self::Result {
+        if let Stmt::If { condition, then_branch, else_branch } = stmt {
+            let condition_result: Value = self.evaluate(condition)?;
+
+            if self.is_truthy(&condition_result)? {
+                self.execute(&then_branch)?;
+            } else {
+                match else_branch {
+                    Some(stmt) => {
+                        self.execute(stmt)?;
+                    },
+                    None => (),
+                }
+            }
+
+            Ok(())
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_while(&mut self, stmt: &Stmt) -> Self::Result {
+        if let Stmt::While { condition, body } = stmt {
+            let mut condition_result: Value = self.evaluate(condition)?;
+
+            while self.is_truthy(&condition_result)? {
+                self.execute(&body)?;
+                condition_result = self.evaluate(condition)?;
+            }
+
+            Ok(())
+        } else {
+            unreachable!()
+        }
     }
 }
