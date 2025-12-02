@@ -9,7 +9,7 @@ impl expr::Visitor for AstPrinter {
         if let expr::Expr::Binary { left, operator, right } = expr {
             self.parenthesize(&operator.lexeme, &[left, right])
         } else {
-            unreachable!() // Should not happen with correct usage
+            unreachable!()
         }
     }
 
@@ -17,7 +17,7 @@ impl expr::Visitor for AstPrinter {
         if let expr::Expr::Grouping { expression } = expr {
             self.parenthesize("group", &[expression])
         } else {
-            unreachable!() // Should not happen
+            unreachable!()
         }
     }
 
@@ -25,7 +25,7 @@ impl expr::Visitor for AstPrinter {
         if let expr::Expr::Literal { value } = expr {
             value.to_string()
         } else {
-            unreachable!() // Should not happen
+            unreachable!()
         }
     }
 
@@ -33,7 +33,7 @@ impl expr::Visitor for AstPrinter {
         if let expr::Expr::Unary { operator, right } = expr {
             self.parenthesize(&operator.lexeme, &[right])
         } else {
-            unreachable!() // Should not happen
+            unreachable!()
         }
     }
 
@@ -70,7 +70,7 @@ impl expr::Visitor for AstPrinter {
         if let expr::Expr::Logical { left, operator, right } = expr {
             self.parenthesize(&operator.lexeme, &[left, right])
         } else {
-            unreachable!() // Should not happen with correct usage
+            unreachable!()
         }
     }
 }
