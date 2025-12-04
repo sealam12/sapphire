@@ -17,6 +17,10 @@ impl SapCallable for SapNativeClock {
         Ok(Value::Number((duration_since_epoch.as_millis() as f64) * (0.001 as f64)))
     }
 
+    fn to_string(&self) -> String {
+        "<native fn callable>".to_owned()
+    }
+
     fn clone_callable(&self) -> Box<dyn SapCallable> {
         Box::new(
             SapNativeClock {}

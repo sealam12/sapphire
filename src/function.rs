@@ -20,7 +20,11 @@ impl SapFunction {
 
 impl SapCallable for SapFunction {
     fn arity(&self) -> usize {
-        0
+        if let Stmt::Function { name, params, body } = &self.declaration {
+            params.len()
+        } else {
+            unreachable!()
+        }
     }
 
     fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, RuntimeError> {

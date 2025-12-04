@@ -9,5 +9,9 @@ pub trait SapCallable: Debug {
     // call executes the function, taking a reference to the interpreter and arguments
     fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, RuntimeError>;
 
+    fn to_string(&self) -> String {
+        "<fn callable>".to_owned()
+    }
+
     fn clone_callable(&self) -> Box<dyn SapCallable>;
 }
