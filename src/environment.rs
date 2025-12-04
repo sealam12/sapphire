@@ -77,7 +77,9 @@ impl Environment {
         // Recursively try to assign in the enclosing scope
         if let Some(enclosing_env_ptr) = &self.enclosing {
             // Use .borrow_mut() to safely get a mutable reference to the parent Environment
-            return enclosing_env_ptr.borrow_mut().assign(name, value);
+            return enclosing_env_ptr
+                .borrow_mut()
+                .assign(name, value);
         }
 
         Err(RuntimeError::new(

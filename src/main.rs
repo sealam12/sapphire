@@ -49,7 +49,14 @@ impl Sapphire {
             environment: globals.clone(),
         };
 
-        new.globals.borrow_mut().define_from_string("clock", Value::Callable(Box::new(natives::SapNativeClock {})));
+        new.globals
+            .borrow_mut()
+            .define_from_string(
+                "clock", 
+                Value::Callable(
+                    Box::new(natives::SapNativeClock {})
+                )
+            );
 
         new
     }

@@ -11,7 +11,7 @@ pub struct SapFunction {
 }
 
 impl SapFunction {
-    fn new(declaration: Stmt) -> Self {
+    pub fn new(declaration: Stmt) -> Self {
         Self {
             declaration
         }
