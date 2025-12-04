@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::environment::Environment;
+use crate::function::SapFunction;
 use crate::token_type::TokenType;
 use crate::error::RuntimeError;
 use crate::expr::{self, Expr};
@@ -235,7 +236,12 @@ impl<'a> expr::Visitor for Interpreter<'a> {
         if let Expr::Assign { name, value } = expr {
             let new_value: Value = self.evaluate(value)?;
 
-            self.main.environment.borrow_mut().assign(name, new_value.clone())?;
+            self.main.environment
+                .borrow_mut()
+                .assign(
+                    name, 
+                    new_value.clone()
+                )?;
 
             Ok(new_value)
         } else {
@@ -334,9 +340,14 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
 
     fn visit_var(&mut self, statement: &Stmt) -> Self::Result {
         if let Stmt::Var { name, initializer } = statement {
-            let val: Value = self.evaluate(initializer)?;
+            let value: Value = self.evaluate(initializer)?;
 
-            self.main.environment.borrow_mut().define(name, val)?;
+            self.main.environment
+                .borrow_mut()
+                .define(
+                    name, 
+                    value
+                )?;
 
             Ok(())
         } else {
@@ -409,6 +420,15 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
 
     fn visit_function(&mut self, stmt: &Stmt) -> Self::Result {
         if let Stmt::Function { name, params, body } = stmt {
+            let mut func = SapFunction::new(stmt.clone());
+
+            self.main.environment
+                .borrow_mut()
+                .define(
+                    name, 
+                    Value::Callable(Box::new(func))
+                )?;
+
             Ok(())
         } else {
             unreachable!()

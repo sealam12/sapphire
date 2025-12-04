@@ -147,9 +147,28 @@ impl<'a> Parser<'a> {
             self.if_statement()
         } else if self.match_types(vec![TokenType::While]) {
             self.while_statement()
+        } else if self.match_types(vec![TokenType::Fn]) {
+            self.function_statement()
         } else {
             self.expression_statement()
         }
+    }
+
+    pub fn function_statement(&mut self) -> Result<Stmt, ParseError> {
+        let fn_name: Token = self.advance()?.clone();
+        self.consume(TokenType::LeftParen, "Expected LEFT_PAREN after function name".to_owned())?;
+
+        let mut params: Vec<Token> = vec![];
+        if !self.match_types(vec![TokenType::RightParen]) {
+            let mut matched: bool = true;
+
+            while matched {
+                params.push(self.advance()?.clone());
+                matched = self.match_types(vec![TokenType::Comma]);
+            }
+        }
+
+        Ok(Stmt::Function { name: fn_name, params, body: Box::new(self.statement()?) })
     }
 
     pub fn if_statement(&mut self) -> Result<Stmt, ParseError> {
