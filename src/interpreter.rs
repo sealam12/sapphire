@@ -82,6 +82,7 @@ impl<'a> Interpreter<'a> {
             Value::Str(_) => Ok(true),
             Value::Number(_) => Ok(true),
             Value::List(_) => Ok(true),
+            Value::Callable(_) => Ok(true),
             Value::Bool(bool_value) => Ok(bool_value),
             Value::Null => Ok(false)
         }
@@ -270,7 +271,23 @@ impl<'a> expr::Visitor for Interpreter<'a> {
     }
 
     fn visit_call(&mut self, expr: &Expr) -> Self::Result {
-        Ok(Value::Number(32 as f64))
+        if let Expr::Call { callee, paren, arguments } = expr {
+            let callee: Value = self.evaluate(&callee)?;
+            match callee {
+                Value::Callable(call) => {
+                    let mut args: Vec<Value> = vec![];
+                    for arg in arguments {
+                        args.push(self.evaluate(&arg)?);
+                    }
+        
+                    Ok(call.call(self, args)?)
+                },
+                _ => Err(RuntimeError::new("TypeError: Expected callable in call expression.", paren.line))
+            }
+
+        } else {
+            unreachable!()
+        }
     }
 
     fn visit_index(&mut self, expr: &Expr) -> Self::Result {
@@ -384,6 +401,14 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
                 condition_result = self.evaluate(condition)?;
             }
 
+            Ok(())
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_function(&mut self, stmt: &Stmt) -> Self::Result {
+        if let Stmt::Function { name, params, body } = stmt {
             Ok(())
         } else {
             unreachable!()

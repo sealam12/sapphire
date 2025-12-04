@@ -9,7 +9,7 @@ fn define_ast(output_directory: String, base_name: String, imports: String, type
     
     let mut ast_string: String = imports + "\n";
     
-    ast_string += format!("#[derive(Clone)]\npub enum {} {{", base_name).as_str();
+    ast_string += format!("#[derive(Clone, Debug)]\npub enum {} {{", base_name).as_str();
     
     let mut struct_strings: Vec<String> = vec![];
     let mut struct_names: Vec<String> = vec![];
@@ -149,6 +149,7 @@ fn main() {
             String::from("Print      :Expr expression"),
             String::from("Var        :Token name, Expr initializer"),
             
+            String::from("Function   :Token name, Vec<Token> params, Box<Stmt> body"),
             String::from("If         :Expr condition, Box<Stmt> then_branch, Option<Box<Stmt>> else_branch"),
             String::from("While      :Expr condition, Box<Stmt> body"),
         ]

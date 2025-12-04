@@ -1,6 +1,6 @@
 use crate::expr::Expr;
 use crate::token::Token;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Stmt {
 	Block {
 		statements: Vec<Stmt>,
@@ -17,6 +17,12 @@ pub enum Stmt {
 	Var {
 		name: Token,
 		initializer: Expr,
+	},
+
+	Function {
+		name: Token,
+		params: Vec<Token>,
+		body: Box<Stmt>,
 	},
 
 	If {
@@ -38,6 +44,7 @@ pub trait Visitor {
 	fn visit_expression(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_print(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_var(&mut self, stmt: &Stmt) -> Self::Result;
+	fn visit_function(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_if(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_while(&mut self, stmt: &Stmt) -> Self::Result;
 }
@@ -56,6 +63,9 @@ impl Stmt {
 			}
 			Stmt::Var {name: _, initializer: _,  } => {
 				visitor.visit_var(self)
+			}
+			Stmt::Function {name: _, params: _, body: _,  } => {
+				visitor.visit_function(self)
 			}
 			Stmt::If {condition: _, then_branch: _, else_branch: _,  } => {
 				visitor.visit_if(self)

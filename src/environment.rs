@@ -3,6 +3,7 @@ use std::rc::Rc; // Used for shared ownership (Reference Counting)
 use std::cell::RefCell; // Used for interior mutability (borrow_mut() at runtime)
 
 // Assume these types are defined in other modules
+use crate::token_type::TokenType;
 use crate::error::RuntimeError; 
 use crate::value::Value; 
 use crate::token::Token; 
@@ -33,6 +34,17 @@ impl Environment {
             self.values.insert(name.lexeme.clone(), value);
             Ok(())
         }
+    }
+
+    pub fn define_from_string(&mut self, name: &str, value: Value) {
+        let new_token: Token = Token {
+            token_type: TokenType::Identifier,
+            lexeme: name.to_owned(),
+            literal: Value::Null, 
+            line: 0 
+        };
+
+        let _ = self.define(&new_token, value);
     }
 
     // `get` takes `&self` but uses `.borrow()` internally to read from parent scopes safely

@@ -2,23 +2,27 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 
-use crate::astprinter::AstPrinter;
 use crate::environment::Environment;
 use crate::interpreter::Interpreter;
+use crate::astprinter::AstPrinter;
 use crate::token_type::TokenType;
 use crate::error::RuntimeError;
 use crate::scanner::Scanner;
 use crate::parser::Parser;
 use crate::token::Token;
+use crate::value::Value;
 use crate::stmt::Stmt;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 mod environment;
 mod interpreter;
 mod token_type;
 mod astprinter;
+mod function;
+mod callable;
+mod natives;
 mod scanner;
 mod parser;
 mod token;
@@ -30,16 +34,24 @@ mod stmt;
 struct Sapphire {
     pub had_error: bool,
     pub had_runtime_error: bool,
+    pub globals: Rc<RefCell<Environment>>,
     pub environment: Rc<RefCell<Environment>>,
 }
 
 impl Sapphire {
     pub fn new() -> Self {
-        Self {
+        let globals = Rc::new(RefCell::new(Environment::new(Option::None)));
+
+        let new = Self {
             had_error: false,
             had_runtime_error: false,
-            environment: Rc::new(RefCell::new(Environment::new(Option::None)))
-        }
+            globals: globals.clone(),
+            environment: globals.clone(),
+        };
+
+        new.globals.borrow_mut().define_from_string("clock", Value::Callable(Box::new(natives::SapNativeClock {})));
+
+        new
     }
 
     fn read_file_contents(&self, file_path: String) -> Result<String, io::Error> {

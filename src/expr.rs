@@ -1,6 +1,6 @@
 use crate::token::Token;
 use crate::value::Value;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Expr {
 	Call {
 		callee: Box<Expr>,
