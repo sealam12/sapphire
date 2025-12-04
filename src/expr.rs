@@ -2,6 +2,18 @@ use crate::token::Token;
 use crate::value::Value;
 #[derive(Clone)]
 pub enum Expr {
+	Call {
+		callee: Box<Expr>,
+		paren: Token,
+		arguments: Vec<Expr>,
+	},
+
+	Index {
+		indexee: Box<Expr>,
+		bracket: Token,
+		index: Box<Expr>,
+	},
+
 	List {
 		expressions: Vec<Expr>,
 	},
@@ -50,6 +62,8 @@ pub enum Expr {
 pub trait Visitor {
 	type Result;
 
+	fn visit_call(&mut self, expr: &Expr) -> Self::Result;
+	fn visit_index(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_list(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_ternary(&mut self, expr: &Expr) -> Self::Result;
 	fn visit_assign(&mut self, expr: &Expr) -> Self::Result;
@@ -64,6 +78,12 @@ pub trait Visitor {
 impl Expr {
 	pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::Result {
 		match self {
+			Expr::Call {callee: _, paren: _, arguments: _,  } => {
+				visitor.visit_call(self)
+			}
+			Expr::Index {indexee: _, bracket: _, index: _,  } => {
+				visitor.visit_index(self)
+			}
 			Expr::List {expressions: _,  } => {
 				visitor.visit_list(self)
 			}

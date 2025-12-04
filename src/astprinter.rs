@@ -81,6 +81,14 @@ impl expr::Visitor for AstPrinter {
             unreachable!()
         }
     }
+
+    fn visit_call(&mut self, expr: &expr::Expr) -> Self::Result {
+        String::from("Call")
+    }
+
+    fn visit_index(&mut self, expr: &expr::Expr) -> Self::Result {
+        String::from("Index")
+    }
 }
 
 impl AstPrinter {

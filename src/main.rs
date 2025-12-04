@@ -12,6 +12,9 @@ use crate::parser::Parser;
 use crate::token::Token;
 use crate::stmt::Stmt;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 mod environment;
 mod interpreter;
 mod token_type;
@@ -27,7 +30,7 @@ mod stmt;
 struct Sapphire {
     pub had_error: bool,
     pub had_runtime_error: bool,
-    pub environment: Environment,
+    pub environment: Rc<RefCell<Environment>>,
 }
 
 impl Sapphire {
@@ -35,7 +38,7 @@ impl Sapphire {
         Self {
             had_error: false,
             had_runtime_error: false,
-            environment: Environment::new(Option::None)
+            environment: Rc::new(RefCell::new(Environment::new(Option::None)))
         }
     }
 
@@ -140,6 +143,8 @@ fn main() -> std::io::Result<()> {
     } else {
         sapphire.run_prompt();
     }
+
+   //sapphire.run_file("testfile.sap".to_owned());
 
     Ok(())
 }

@@ -308,10 +308,70 @@ impl<'a> Parser<'a> {
             let operator: Token = self.previous().clone();
             let right: Expr = self.unary()?;
 
-            return Ok(Expr::Unary { operator, right: Box::new(right) });
+            Ok(Expr::Unary { operator, right: Box::new(right) })
+        } else {
+            self.index()
+        }
+    }
+
+    pub fn index(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.list()?;
+
+        if self.match_types(vec![TokenType::LeftBracket]) {
+            let bracket: Token = self.previous().clone();
+            let index: Expr = self.expression()?;
+
+            self.consume(TokenType::RightBracket, "Expected ] to close Index statement".to_owned())?;
+
+            expr = Expr::Index { indexee: Box::new(expr), bracket, index: Box::new(index) };
         }
 
-        self.primary()
+        Ok(expr)
+    }
+
+    pub fn list(&mut self) -> Result<Expr, ParseError> {
+        if self.match_types(vec![TokenType::LeftBracket]) {
+            let mut list: Vec<Expr> = vec![];
+            while !self.match_types(vec![TokenType::RightBracket]) {
+                list.push(self.expression()?);
+    
+                self.match_types(vec![TokenType::Comma]);
+            }
+    
+            Ok(Expr::List { expressions: list })
+        } else {
+            Ok(self.call()?)
+        }
+    }
+
+    pub fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.primary()?;
+
+        loop {
+            if self.match_types(vec![TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    pub fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut args: Vec<Expr> = vec![];
+
+        if !self.check(TokenType::RightParen) {
+            let mut matched = true;
+
+            while matched {
+                args.push(self.expression()?);
+                matched = self.match_types(vec![TokenType::Comma]);
+            }
+        }
+
+        let paren: Token = self.consume(TokenType::RightParen, "Expected ')' after arguments.".to_owned())?.clone();
+        Ok(Expr::Call { callee: Box::new(callee), paren, arguments: args })
     }
 
     pub fn primary(&mut self) -> Result<Expr, ParseError> {
@@ -332,20 +392,10 @@ impl<'a> Parser<'a> {
                 self.consume(TokenType::RightParen, String::from("Expect ')' to close grouping expression."))?;
                 return Ok(Expr::Grouping { expression: Box::new(expr) });
             },
-            TokenType::LeftBracket => {
-                let mut list: Vec<Expr> = vec![];
-                while !self.match_types(vec![TokenType::RightBracket]) {
-                    list.push(self.expression()?);
-
-                    self.match_types(vec![TokenType::Comma]);
-                }
-
-                return Ok(Expr::List { expressions: list })
-            },
 
             _ => {}
         }
 
         Err(self.error(next_token, "Expected expression".to_owned()))
     }
-} 
+}
