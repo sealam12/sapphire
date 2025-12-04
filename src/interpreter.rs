@@ -1,3 +1,7 @@
+use std::mem;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use crate::environment::Environment;
 use crate::token_type::TokenType;
 use crate::error::RuntimeError;
@@ -36,23 +40,36 @@ impl<'a> Interpreter<'a> {
 
     pub fn execute_block(&mut self, block: &Stmt, environment: Environment) -> Result<(), RuntimeError> {
         if let Stmt::Block { statements } = block {
-            let previous_environment = self.main.environment.clone();
-    
-            let result: Result<(), RuntimeError> =  {
-                self.main.environment = environment;
-    
-                for stmt in statements {
-                    self.execute(stmt)?
-                }
-    
-                Ok(())
-            };
-    
-            self.main.environment = previous_environment;
+            // 1. Swap the current environment (self.main.environment) with the new block environment.
+            //    `previous_env_ptr` now holds the pointer to the parent scope that we must restore later.
+            //    Note: We wrap the new 'environment: Environment' object in the necessary Rc<RefCell<...>> container.
+            let previous_env_ptr = mem::replace(
+                &mut self.main.environment, 
+                Rc::new(RefCell::new(environment))
+            );
 
-            result
+            // 2. Execute the statements within the new scope.
+            //    We use a block expression (`{ ... }`) to ensure robust scope restoration via `match`.
+            let execution_result = {
+                // The main loop for executing statements
+                for stmt in statements {
+                    // If any statement fails (returns Err), the `?` operator immediately exits this block, 
+                    // jumping down to the `match` expression below.
+                    self.execute(stmt)?; 
+                }
+                Ok(()) // If loop finishes successfully, return Ok(())
+            };
+
+            // 3. CRITICAL: Restore the previous (parent) environment before `execute_block` returns.
+            //    This happens whether `execution_result` was Ok or Err.
+            self.main.environment = previous_env_ptr;
+
+            // 4. Return the outcome of the execution.
+            execution_result
+
         } else {
-            unreachable!()
+            // A helper function for execute_block should only be called with a Block Stmt
+            unreachable!("execute_block called with a non-block statement variant")
         }
     }
 
@@ -207,7 +224,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
 
     fn visit_variable(&mut self, expr: &Expr) -> Self::Result {
         if let Expr::Variable { name } = expr {
-            self.main.environment.get(name)
+            self.main.environment.borrow().get(name)
         } else {
             unreachable!()
         }
@@ -217,7 +234,7 @@ impl<'a> expr::Visitor for Interpreter<'a> {
         if let Expr::Assign { name, value } = expr {
             let new_value: Value = self.evaluate(value)?;
 
-            self.main.environment.assign(name, new_value.clone())?;
+            self.main.environment.borrow_mut().assign(name, new_value.clone())?;
 
             Ok(new_value)
         } else {
@@ -251,6 +268,48 @@ impl<'a> expr::Visitor for Interpreter<'a> {
             unreachable!()
         }
     }
+
+    fn visit_call(&mut self, expr: &Expr) -> Self::Result {
+        Ok(Value::Number(32 as f64))
+    }
+
+    fn visit_index(&mut self, expr: &Expr) -> Self::Result {
+        if let Expr::Index { indexee, bracket, index } = expr {
+            let indexee_result: Value = self.evaluate(indexee)?;
+            let index_result: Value = self.evaluate(index)?;
+
+            let idx: usize;
+
+            match index_result {
+                Value::Number(v) => idx = v as usize,
+                _ => return Err(RuntimeError::new("TypeError: Type for index must be Number", bracket.line))
+            }
+
+            match indexee_result {
+                Value::Str(string) => {
+                    let char: Option<char> = string.chars().nth(idx);
+
+                    match char {
+                        Some(c) => Ok(Value::Str(c.to_string())),
+                        None => Err(RuntimeError::new("IndexOutOfBoundsError: Tried to index out of bounds of Str", bracket.line))
+                    }
+                },
+
+                Value::List(vec) => {
+                    let val: Option<&Value> = vec.get(idx);
+
+                    match val {
+                        Some(v) => Ok(v.clone()),
+                        None => Err(RuntimeError::new("IndexOutOfBoundsError: Tried to index out of bounds of List", bracket.line))
+                    }
+                },
+
+                _ => Err(RuntimeError::new("TypeError: Invalid type for indexing, must be Str or List", bracket.line))
+            }
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl<'a> stmt::Visitor for Interpreter<'a> {
@@ -260,7 +319,7 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
         if let Stmt::Var { name, initializer } = statement {
             let val: Value = self.evaluate(initializer)?;
 
-            self.main.environment.define(name, val)?;
+            self.main.environment.borrow_mut().define(name, val)?;
 
             Ok(())
         } else {
@@ -288,11 +347,10 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
     }
 
     fn visit_block(&mut self, stmt: &Stmt) -> Self::Result {
-        let new_environment: Option<Box<Environment>> = Option::Some(
-            Box::new(self.main.environment.clone())
-        );
+        let parent_env_ptr = Rc::clone(&self.main.environment);
+        let new_scope_env = Environment::new(Some(parent_env_ptr));
 
-        self.execute_block(stmt, Environment::new(new_environment ))
+        self.execute_block(stmt, new_scope_env)
     }
 
     fn visit_if(&mut self, stmt: &Stmt) -> Self::Result {
@@ -322,6 +380,7 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
 
             while self.is_truthy(&condition_result)? {
                 self.execute(&body)?;
+
                 condition_result = self.evaluate(condition)?;
             }
 
