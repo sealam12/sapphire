@@ -155,15 +155,16 @@ fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let args_len: usize = args.len();
 
+    /*
     if args_len > 2 {
         println!("Usage: sapphire [file]");
     } else if args_len == 2 {
         sapphire.run_file(args[1].clone());
     } else {
         sapphire.run_prompt();
-    }
+    } */
 
-   //sapphire.run_file("testfile.sap".to_owned());
+   sapphire.run_file("testfile.sap".to_owned());
 
     Ok(())
 }

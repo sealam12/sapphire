@@ -149,9 +149,23 @@ impl<'a> Parser<'a> {
             self.while_statement()
         } else if self.match_types(vec![TokenType::Fn]) {
             self.function_statement()
+        } else if self.match_types(vec![TokenType::Return]) {
+            self.return_statement()
         } else {
             self.expression_statement()
         }
+    }
+
+    pub fn return_statement(&mut self) -> Result<Stmt, ParseError> {
+        let keyword: Token = self.previous().clone();
+
+        let mut value: Expr = Expr::Literal { value: Value::Null };
+        if !self.check(TokenType::Semicolon) {
+            value = self.expression()?;
+        }
+
+        self.consume(TokenType::Semicolon, "Expected ';' after return value.".to_owned())?;
+        Ok(Stmt::Return { keyword, value })
     }
 
     pub fn function_statement(&mut self) -> Result<Stmt, ParseError> {
@@ -167,6 +181,8 @@ impl<'a> Parser<'a> {
                 matched = self.match_types(vec![TokenType::Comma]);
             }
         }
+
+        self.consume(TokenType::RightParen, "Expected RIGHT_PAREN after function parameters".to_owned())?;
 
         Ok(Stmt::Function { name: fn_name, params, body: Box::new(self.statement()?) })
     }

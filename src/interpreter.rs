@@ -285,8 +285,18 @@ impl<'a> expr::Visitor for Interpreter<'a> {
                     for arg in arguments {
                         args.push(self.evaluate(&arg)?);
                     }
-        
-                    Ok(call.call(self, args)?)
+
+                    let result: Result<Value, RuntimeError> = call.call(self, args);
+
+                    match result {
+                        Ok(v) => Ok(v),
+                        Err(error) => {
+                            match error.return_value {
+                                Option::None => Err(error),
+                                Option::Some(v) => Ok(v)
+                            }
+                        }
+                    }
                 },
                 _ => Err(RuntimeError::new("TypeError: Expected callable in call expression.", paren.line))
             }
@@ -430,6 +440,15 @@ impl<'a> stmt::Visitor for Interpreter<'a> {
                 )?;
 
             Ok(())
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn visit_return(&mut self, stmt: &Stmt) -> Self::Result {
+        if let Stmt::Return { keyword, value } = stmt {
+            let return_val: Value = self.evaluate(value)?;
+            Err(RuntimeError::return_value(stmt.clone(), return_val))
         } else {
             unreachable!()
         }

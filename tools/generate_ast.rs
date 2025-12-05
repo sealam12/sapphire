@@ -147,6 +147,7 @@ fn main() {
             String::from("Block      :Vec<Stmt> statements"),
             String::from("Expression :Expr expression"),
             String::from("Print      :Expr expression"),
+            String::from("Return     :Token keyword, Expr value"),
             String::from("Var        :Token name, Expr initializer"),
             
             String::from("Function   :Token name, Vec<Token> params, Box<Stmt> body"),

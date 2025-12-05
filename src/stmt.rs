@@ -14,6 +14,11 @@ pub enum Stmt {
 		expression: Expr,
 	},
 
+	Return {
+		keyword: Token,
+		value: Expr,
+	},
+
 	Var {
 		name: Token,
 		initializer: Expr,
@@ -43,6 +48,7 @@ pub trait Visitor {
 	fn visit_block(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_expression(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_print(&mut self, stmt: &Stmt) -> Self::Result;
+	fn visit_return(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_var(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_function(&mut self, stmt: &Stmt) -> Self::Result;
 	fn visit_if(&mut self, stmt: &Stmt) -> Self::Result;
@@ -60,6 +66,9 @@ impl Stmt {
 			}
 			Stmt::Print {expression: _,  } => {
 				visitor.visit_print(self)
+			}
+			Stmt::Return {keyword: _, value: _,  } => {
+				visitor.visit_return(self)
 			}
 			Stmt::Var {name: _, initializer: _,  } => {
 				visitor.visit_var(self)
