@@ -1,3 +1,5 @@
+#![allow(dead_code, unused)]
+
 use std::env;
 use std::io::{self, Write};
 use std::fs;
@@ -74,8 +76,6 @@ impl Sapphire {
         }
 
         let mut parser: Parser = Parser::new(self, tokens);
-
-        let mut ast_printer = AstPrinter {};
 
         let statements: Vec<Stmt>;
         match parser.parse() {

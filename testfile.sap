@@ -1,0 +1,13 @@
+fn fib(n) {
+  if (n <= 1) return n;
+
+  var a = fib(n-2);
+  var b = fib(n-1);
+
+  print a;
+  print b;
+
+  return fib(n - 2) + fib(n - 1);
+}
+
+print fib(5);

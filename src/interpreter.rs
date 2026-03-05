@@ -41,35 +41,20 @@ impl<'a> Interpreter<'a> {
 
     pub fn execute_block(&mut self, block: &Stmt, environment: Environment) -> Result<(), RuntimeError> {
         if let Stmt::Block { statements } = block {
-            // 1. Swap the current environment (self.main.environment) with the new block environment.
-            //    `previous_env_ptr` now holds the pointer to the parent scope that we must restore later.
-            //    Note: We wrap the new 'environment: Environment' object in the necessary Rc<RefCell<...>> container.
             let previous_env_ptr = mem::replace(
                 &mut self.main.environment, 
                 Rc::new(RefCell::new(environment))
             );
-
-            // 2. Execute the statements within the new scope.
-            //    We use a block expression (`{ ... }`) to ensure robust scope restoration via `match`.
             let execution_result = {
-                // The main loop for executing statements
                 for stmt in statements {
-                    // If any statement fails (returns Err), the `?` operator immediately exits this block, 
-                    // jumping down to the `match` expression below.
                     self.execute(stmt)?; 
                 }
-                Ok(()) // If loop finishes successfully, return Ok(())
+                Ok(())
             };
-
-            // 3. CRITICAL: Restore the previous (parent) environment before `execute_block` returns.
-            //    This happens whether `execution_result` was Ok or Err.
             self.main.environment = previous_env_ptr;
 
-            // 4. Return the outcome of the execution.
             execution_result
-
         } else {
-            // A helper function for execute_block should only be called with a Block Stmt
             unreachable!("execute_block called with a non-block statement variant")
         }
     }
@@ -101,7 +86,7 @@ impl<'a> Interpreter<'a> {
     }
 }
 
-impl<'a> expr::Visitor for Interpreter<'a> {
+impl<'a> expr::Visitor for Interpreter<'a> { 
     type Result = Result<Value, RuntimeError>;
 
     fn visit_literal(&mut self, expr: &Expr) -> Self::Result {
